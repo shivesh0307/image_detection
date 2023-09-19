@@ -2,6 +2,8 @@ import os
 import face_recognition
 import cv2
 import numpy as np
+import os
+import datetime
 
 def load_images_and_store_face_vectors(image_folder_path):
 
@@ -78,6 +80,46 @@ def main():
 
     # Stream video and display a rectangle box if the face is registered or not
     stream_video_and_display_rectangle_box(known_faces)
+
+
+   
+
+def accept_feedback(image):
+
+  # Save the image in the pictures folder
+  image_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S.jpg")
+  image_path = os.path.join("pictures", image_name)
+  cv2.imwrite(image_path, image)
+
+  # Extract the features from the image
+  face_features = face_recognition.face_encodings(image)[0]
+
+  # Save the features in the face_features folder
+  face_features_path = os.path.join("face_features", image_name + ".npy")
+  np.save(face_features_path, face_features)
+
+def search(image):
+
+  # Extract the features from the image
+  unknown_face_features = face_recognition.face_encodings(image)[0]
+
+  # Load the known face features from the face_features folder
+  known_face_features = []
+  for file in os.listdir("face_features"):
+    known_face_features.append(np.load(os.path.join("face_features", file)))
+
+  # Calculate the distances between the unknown face features and the known face features
+  distances = face_recognition.face_distance(known_face_features, unknown_face_features)
+
+  # Find the closest match to the unknown face features
+  best_match_index = np.argmin(distances)
+
+  # If the distance to the best match is less than a certain threshold, then the face is registered in the database
+  if distances[best_match_index] < 0.5:
+    return True
+  else:
+    return False
+
 
 
 if __name__ == '__main__':
